@@ -1,0 +1,96 @@
+import urequests
+import utime
+import network
+from machine import Pin
+
+# Set up your Google Sheets API credentials
+SPREADSHEET_ID = "1bb7gqN_zQXo1Kv-1fDcrIbNl6G4wWBjFz5TazAkRxYQ"
+API_KEY = "YOUR_GOOGLE_SHEETS_API_KEY"
+
+# Set up your WiFi credentials
+WIFI_SSID = "YOUR_WIFI_SSID"
+WIFI_PASSWORD = "YOUR_WIFI_PASSWORD"
+
+# Define GPIO pins
+LED_PIN = 2
+INPUT_PIN = 5
+
+# Initialize LED pin
+led = Pin(LED_PIN, Pin.OUT)
+led.off()
+
+# Initialize input pin
+input_pin = Pin(INPUT_PIN, Pin.IN)
+
+# Function to connect to WiFi
+def connect_to_wifi():
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    if not wlan.isconnected():
+        print("Connecting to WiFi...")
+        wlan.connect(WIFI_SSID, WIFI_PASSWORD)
+        while not wlan.isconnected():
+            utime.sleep(1)
+    print("WiFi connected:", wlan.ifconfig())
+    led.on()  # Turn on LED when connected to WiFi
+
+# Function to get the current date and time in Jerusalem
+def get_current_time():
+    # Implement this function based on your RTC setup
+    pass
+
+# Function to add data to Google Spreadsheet
+def add_to_spreadsheet(value):
+    # Get the current date and time in Jerusalem
+    current_time = get_current_time()
+    date_time_str = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(current_time[0], current_time[1], current_time[2],
+                                                                        current_time[3], current_time[4], current_time[5])
+
+    # Construct the value range
+    value_range = {
+        "values": [[date_time_str, value]]
+    }
+
+    # Send the request to append data to the spreadsheet
+    url = f"https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET_ID}/values/Sheet1!A1:B1:append?valueInputOption=RAW&key={API_KEY}"
+    headers = {"Content-Type": "application/json"}
+    response = urequests.post(url, json=value_range, headers=headers)
+
+    if response.status_code == 200:
+        print("Data added successfully!")
+        value = 0  # Reset value of X after sending
+    else:
+        print("Failed to add data. Status code:", response.status_code)
+    response.close()
+
+# Main function to run the program
+def main():
+    while True:
+        try:
+            # Connect to WiFi
+            connect_to_wifi()
+
+            # Initialize X
+            x = 0
+
+            # Example usage: sending value of X every 1 minute
+            while True:
+                start_time = utime.time()
+                while utime.time() - start_time < 60:
+                    # Check if input 5 goes from "0" to "1"
+                    if input_pin.value() == 1:
+                        x += 1
+                    utime.sleep_ms(100)  # Check input pin every 100 milliseconds
+
+                # Send value of X to Google Spreadsheet
+                add_to_spreadsheet(x)
+
+                x = 0  # Reset value of X after sending
+
+        except OSError as e:
+            print("Connection lost. Attempting to reconnect...")
+            led.off()  # Turn off LED when disconnected
+            continue
+
+if __name__ == "__main__":
+    main()
