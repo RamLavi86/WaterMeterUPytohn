@@ -3,7 +3,6 @@
 import umail
 import network
 import machine
-import network
 import time
 import urequests
 import utime
