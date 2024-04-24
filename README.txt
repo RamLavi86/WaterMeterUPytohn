@@ -18,3 +18,5 @@ In order to run REPL (read evaluate print loop) go to PuTTy, connect COMx with b
 https://randomnerdtutorials.com/micropython-send-emails-esp32-esp826/
 
 upload umail to device
+
+test
