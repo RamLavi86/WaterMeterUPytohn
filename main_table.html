@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Table</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Measurement</th>
+            </tr>
+        </thead>
+        <tbody id="dataBody">
+        </tbody>
+    </table>
+
+    <script>
+        // Function to retrieve data from Firebase and render the table
+        function fetchData() {
+            fetch("https://watermeterupython-default-rtdb.firebaseio.com/meas.json")
+                .then(response => response.json())
+                .then(data => {
+                    // Convert data to array and sort by timestamp in descending order
+                    const dataArray = Object.values(data);
+                    dataArray.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    renderTable(dataArray.reverse()); // Reverse the array
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        // Function to render the table with data
+        function renderTable(data) {
+            var tbody = document.getElementById('dataBody');
+            tbody.innerHTML = ''; // Clear existing rows
+
+            data.forEach(item => {
+                var row = document.createElement('tr');
+                var timestampCell = document.createElement('td');
+                timestampCell.textContent = item.timestamp;
+                var measurementCell = document.createElement('td');
+                measurementCell.textContent = item.measurement;
+                row.appendChild(timestampCell);
+                row.appendChild(measurementCell);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Fetch data when the page loads
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
+
