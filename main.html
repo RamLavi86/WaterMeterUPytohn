@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Time Series Chart</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div style="width: 100%;">
+        <canvas id="myChart" style="width: 100%;"></canvas>
+    </div>
+    <div style="text-align: center; margin-top: 10px;">
+        <button onclick="previousPage()">Previous</button>
+        <button onclick="nextPage()">Next</button>
+    </div>
+
+    <script>
+        // Global variables
+        var currentPage = 0;
+        var pageSize = 30;
+        var data = [];
+
+        // Function to retrieve data from Firebase
+        function fetchData() {
+            fetch("https://watermeterupython-default-rtdb.firebaseio.com/meas.json")
+                .then(response => response.json())
+                .then(result => {
+                    data = Object.values(result);
+                    renderChart();
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        // Function to create chart
+        function renderChart() {
+            var ctx = document.getElementById('myChart').getContext('2d');
+
+            // Calculate the start and end index for the current page
+            var startIndex = Math.max(0, data.length - (currentPage + 1) * pageSize);
+            var endIndex = Math.max(0, data.length - currentPage * pageSize);
+            var slicedData = data.slice(startIndex, endIndex);
+
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: slicedData.map(item => item.timestamp),
+                    datasets: [{
+                        label: 'Measurements',
+                        data: slicedData.map(item => item.measurement),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        xAxes: [{
+                            type: 'time',
+                            time: {
+                                unit: 'second' // Adjust as needed
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Time'
+                            }
+                        }],
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Measurement Value'
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+
+        // Function to navigate to the previous page
+        function previousPage() {
+            if (currentPage > 0) {
+                currentPage--;
+				console.log("currentPage:", currentPage);
+                renderChart();
+            }
+        }
+
+        // Function to navigate to the next page
+        function nextPage() {
+            if ((currentPage + 1) * pageSize < data.length) {
+                currentPage++;
+                renderChart();
+            }
+        }
+
+        // Fetch data when the page loads
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
