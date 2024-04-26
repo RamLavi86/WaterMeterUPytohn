@@ -19,7 +19,7 @@ led = machine.Pin(led_pin, machine.Pin.OUT)
 # Email details
 sender_email = 'ramlavipushnotification@gmail.com'
 sender_name = 'Water meter' #sender name
-sender_app_password = '' # add gmail app password and place it here
+sender_app_password = ''
 recipient_email = ''
 email_subject = 'Test Email'
 email_content = 'Test content'
@@ -41,6 +41,12 @@ alert_send_enable = True
 
 # hour stamp of the last alert (to prevent two alerts in the same hour)
 alert_hour_stamp = 0
+
+# Firebase Database URL
+firebase_url = "https://watermeterupython-default-rtdb.firebaseio.com/meas.json"
+
+# Authentication token (replace 'YOUR_AUTH_TOKEN' with your actual authentication token)
+auth_token = "YOUR_AUTH_TOKEN"
 
 # Connect to Wi-Fi
 def connect_to_wifi(ssid, password):
@@ -191,6 +197,29 @@ def check_alert_conditions():
     else:
         return False
 
+# Function to get current timestamp
+def get_timestamp():
+    current_time = utime.localtime()
+    timestamp = "{:04d}-{:02d}-{:02d} {:02d}-{:02d}-{:02d}".format(current_time[0], current_time[1], current_time[2], current_time[3], current_time[4], current_time[5])
+    return timestamp
+
+def send_data_to_firebase(meas):
+    # Data to write to Firebase
+    data = {
+        "timestamp": get_timestamp(),
+        "measurement": meas
+    }
+
+    # Send a POST request to Firebase to write data
+    response = urequests.post(firebase_url + "?auth=" + auth_token, json=data)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        print("Data written successfully to Firebase.")
+    else:
+        print("Failed to write data to Firebase. Error:", response.text)
+
+# main loop
 while True:
     print('start main')
     # Check Wi-Fi connection
@@ -218,6 +247,7 @@ while True:
     if prev_hour != current_hour:
         counters[prev_hour] = counter
         prev_hour = current_hour
+        send_data_to_firebase(counter) # send counter reading to firebase
         counter = 0
         print(f'fill water capacity for {prev_hour}')
         
