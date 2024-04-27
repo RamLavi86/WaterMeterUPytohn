@@ -41,7 +41,7 @@
             var slicedData = data.slice(startIndex, endIndex);
 
             var myChart = new Chart(ctx, {
-                type: 'line',
+                type: 'bar',
                 data: {
                     labels: slicedData.map(item => item.timestamp),
                     datasets: [{
